@@ -54,7 +54,11 @@ class Bahn(object):
 
     def find_location(self, query):
         """Given a query, find a list of matching locations."""
-        return self._request("location.name", "input=" + query)["LocationList"]["StopLocation"]
+        result = self._request("location.name", "input=" + query)["LocationList"]["StopLocation"]
+        # the fuck. "How about we *sometimes* return a list!"
+        if isinstance(result, list):
+            return result
+        return [result]
 
     def get_departures(self, station_id, date=None, time=None):
         """
@@ -70,7 +74,10 @@ class Bahn(object):
             time,
             ))["DepartureBoard"]
         self.raise_if_necessary(db)
-        return db["Departure"]
+        result = db["Departure"]
+        if isinstance(result, list):
+            return result
+        return [result]
 
     def get_arrivals(self, station_id, date=None, time=None):
         """
@@ -86,7 +93,10 @@ class Bahn(object):
             time,
             ))["ArrivalBoard"]
         self.raise_if_necessary(ab)
-        return ab["Arrival"]
+        result = ab["Arrival"]
+        if isinstance(result, list):
+            return result
+        return [result]
 
     def get_journey(self, journey):
         """
