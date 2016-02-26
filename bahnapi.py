@@ -12,7 +12,7 @@ class ApiError(Exception):
 class Bahn(object):
     """Leightweight wrapper for DBOpenData's Fahrplan API."""
 
-    def __init__(self, key=None, lang="de"):
+    def __init__(self, key=None, lang="de", debug=False):
         if key is None:
             with open("api_key") as f:
                 key = f.read().strip()
@@ -23,12 +23,26 @@ class Bahn(object):
                 + lang
                 + "&format=json&{}"
                 )
+        self.debug = debug
 
     def _request(self, service, args):
         rurl = self.baseurl.format(service, args)
-        print("GET", rurl)
+        self.print("GET", rurl)
         r = requests.get(rurl)
-        return json.loads(r.text)
+        self.print(r.text)
+        data = json.loads(r.text)
+        self.print(data)
+        return data
+
+    def print(self, *args, **kwargs):
+        """Print if debug is true"""
+        if self.debug:
+            print(*args, **kwargs)
+
+    @staticmethod
+    def raise_if_necessary(obj):
+        if 'errorCode' in obj:
+            raise ApiError("{}: {}".format(obj["errorCode"], obj["errorText"]))
 
     @staticmethod
     def _date_time():
@@ -55,8 +69,7 @@ class Bahn(object):
             date,
             time,
             ))["DepartureBoard"]
-        if 'errorCode' in db:
-            raise ApiError("{}: {}".format(db["errorCode"], db["errorText"]))
+        self.raise_if_necessary(db)
         return db["Departure"]
 
     def get_arrivals(self, station_id, date=None, time=None):
@@ -72,8 +85,7 @@ class Bahn(object):
             date,
             time,
             ))["ArrivalBoard"]
-        if 'errorCode' in ab:
-            raise ApiError("{}: {}".format(ab["errorCode"], ab["errorText"]))
+        self.raise_if_necessary(ab)
         return ab["Arrival"]
 
     def get_journey(self, journey):
@@ -81,15 +93,17 @@ class Bahn(object):
         Given a journey reference (or a journey from get_arrivals or get_departures,
         return a journey.
         """
-        if isistance(journey, dict):
-            journey = journey["JourneyRef"]["ref"]
-        return self._request("journeyDetail", "ref={}".format(journey))
+        if isinstance(journey, dict):
+            journey = journey["JourneyDetailRef"]["ref"]
+        jd = self._request("journeyDetail", "ref={}".format(journey))["JourneyDetail"]
+        self.raise_if_necessary(jd)
+        return jd
 
 
 if __name__ == '__main__':
     b = Bahn(key=None)  # put API key here
     fra = b.find_location("Frankfurt")[0]
     print(fra)
-    dep = b.get_departures(fra)
+    dep = b.get_departures(fra)[0]
     print(dep)
     print(b.get_journey(dep))

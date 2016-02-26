@@ -1,5 +1,13 @@
 # bahnapi
 
+## Setup
+
+1. Install `requests` if you haven't already (`pip install requests`).
+2. Clone the repository.
+3. There's no step 3.
+
+Written for Python 3, but should work in Python 2.
+
 ## Usage
 
 ```
@@ -12,6 +20,3 @@
 >>> arrivals = b.find_arrivals(weimar, date="2016-02-29")
 >>> journey = b.get_journey(departures[0])
 ```
-
-
-...it broke
